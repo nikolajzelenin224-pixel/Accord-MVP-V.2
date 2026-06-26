@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card } from './ui/Card';
-import { Plus, Cloud, Building2, Box, PenTool, LayoutTemplate, FileText, CreditCard, Utensils, ShoppingBag, Car, Home, Smartphone, Gamepad2, Music, Film, Briefcase, Heart } from 'lucide-react';
+import { Plus, Pencil, Cloud, Building2, Box, PenTool, LayoutTemplate, FileText, CreditCard, Utensils, ShoppingBag, Car, Home, Smartphone, Gamepad2, Music, Film, Briefcase, Heart } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LOGO_LIBRARY } from '../constants/logos';
 
@@ -29,7 +29,7 @@ const getIconComponent = (iconName) => {
   return ICON_MAP[iconName] || ICON_MAP.default;
 };
 
-const SubscriptionsPanel = ({ subscriptions, onToggle, onEdit, onAdd }) => {
+const SubscriptionsPanel = ({ subscriptions, onToggle, onEdit, onAdd, onBind }) => {
   const { t, formatCurrency } = useLanguage();
   
   return (
@@ -93,13 +93,42 @@ const SubscriptionsPanel = ({ subscriptions, onToggle, onEdit, onAdd }) => {
                     <p className="text-xs text-gray-400 mt-0.5">
                       {formatCurrency(sub.price)} / {t('subscriptions.perMonth').split(' / ')[1]}
                     </p>
-                    <p className={`text-[10px] mt-1 ${sub.active ? 'text-gray-400' : 'text-red-500'}`}>
-                      {sub.active ? t('subscriptions.isActive') : t('subscriptions.paymentsBlocked')}
-                    </p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <p className={`text-[10px] ${sub.active ? 'text-gray-400' : 'text-red-500'}`}>
+                        {sub.active ? t('subscriptions.isActive') : t('subscriptions.paymentsBlocked')}
+                      </p>
+                      <span className="text-gray-300 text-[10px]">•</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onBind(sub);
+                        }}
+                        className={`text-[10px] font-medium ${
+                          sub.binding_status === 'pending_user_confirm' || !sub.binding_status
+                            ? 'text-amber-600 hover:text-amber-700 underline'
+                            : 'text-green-600'
+                        }`}
+                      >
+                        {sub.binding_status === 'pending_user_confirm' || !sub.binding_status
+                          ? 'Привязать карту'
+                          : 'Карта привязана'}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(sub);
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-zinc-900 hover:bg-white rounded-lg transition-colors flex-shrink-0"
+                    title="Редактировать подписку"
+                  >
+                    <Pencil size={14} />
+                  </button>
+
                   <div
                     onClick={(e) => {
                       e.stopPropagation();

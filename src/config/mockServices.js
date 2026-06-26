@@ -60,88 +60,88 @@ export const generateMockSubscriptions = (bankId, language = 'ru') => {
       }
     ],
     tinkoff: [
-      { 
+      {
         id: 'spotify_' + Date.now(),
-        name: 'Spotify Premium', 
-        price: 699, 
-        iconName: 'music',
-        active: true 
+        name: 'Spotify Premium',
+        price: 699,
+        logoId: 'spotify',
+        active: true
       },
-      { 
+      {
         id: 'notion_' + Date.now(),
-        name: 'Notion Pro', 
-        price: 950, 
-        iconName: 'file',
-        active: true 
+        name: 'Notion Pro',
+        price: 950,
+        logoId: 'notion',
+        active: true
       },
-      { 
+      {
         id: 'figma_' + Date.now(),
-        name: 'Figma Professional', 
-        price: 1200, 
-        iconName: 'pen',
-        active: true 
+        name: 'Figma Professional',
+        price: 1200,
+        logoId: 'figma',
+        active: true
       }
     ],
     kaspi: [
-      { 
+      {
         id: 'netflix_kz_' + Date.now(),
-        name: 'Netflix', 
-        price: 3500, 
-        iconName: 'tv',
-        active: true 
+        name: 'Netflix',
+        price: 3500,
+        logoId: 'netflix',
+        active: true
       },
-      { 
+      {
         id: 'youtube_' + Date.now(),
-        name: 'YouTube Premium', 
-        price: 2500, 
-        iconName: 'play',
-        active: true 
+        name: 'YouTube Premium',
+        price: 2500,
+        logoId: 'youtube',
+        active: true
       }
     ],
     revolut: [
-      { 
+      {
         id: 'netflix_' + Date.now(),
-        name: 'Netflix Premium', 
+        name: 'Netflix Premium',
         price: 1425, // $15 * 95
-        iconName: 'tv',
-        active: true 
+        logoId: 'netflix',
+        active: true
       },
-      { 
+      {
         id: 'spotify_global_' + Date.now(),
-        name: 'Spotify', 
+        name: 'Spotify',
         price: 950, // $10 * 95
-        iconName: 'music',
-        active: true 
+        logoId: 'spotify',
+        active: true
       },
-      { 
+      {
         id: 'chatgpt_' + Date.now(),
-        name: 'ChatGPT Plus', 
+        name: 'ChatGPT Plus',
         price: 1900, // $20 * 95
-        iconName: 'bot',
-        active: true 
+        logoId: 'chatgpt',
+        active: true
       }
     ],
     mercury: [
-      { 
+      {
         id: 'github_' + Date.now(),
-        name: 'GitHub Pro', 
+        name: 'GitHub Pro',
         price: 380, // $4 * 95
-        iconName: 'code',
-        active: true 
+        logoId: 'github',
+        active: true
       },
-      { 
+      {
         id: 'aws_' + Date.now(),
-        name: 'AWS Services', 
+        name: 'AWS Services',
         price: 4750, // $50 * 95
-        iconName: 'cloud',
-        active: true 
+        logoId: 'aws',
+        active: true
       },
-      { 
+      {
         id: 'vercel_' + Date.now(),
-        name: 'Vercel Pro', 
+        name: 'Vercel Pro',
         price: 1900, // $20 * 95
-        iconName: 'zap',
-        active: true 
+        logoId: 'vercel',
+        active: true
       }
     ]
   };
@@ -152,24 +152,24 @@ export const generateMockSubscriptions = (bankId, language = 'ru') => {
 // Popular services for manual card issuance
 export const POPULAR_SERVICES = {
   ru: [
-    { id: 'netflix', name: 'Netflix', iconName: 'tv', suggestedLimit: 1500 },
-    { id: 'spotify', name: 'Spotify', iconName: 'music', suggestedLimit: 700 },
-    { id: 'chatgpt', name: 'ChatGPT Plus', iconName: 'bot', suggestedLimit: 2000 },
-    { id: 'notion', name: 'Notion', iconName: 'file', suggestedLimit: 1000 },
-    { id: 'figma', name: 'Figma', iconName: 'pen', suggestedLimit: 1200 },
-    { id: 'github', name: 'GitHub', iconName: 'code', suggestedLimit: 400 },
-    { id: 'adobe', name: 'Adobe CC', iconName: 'image', suggestedLimit: 6500 },
-    { id: 'dropbox', name: 'Dropbox', iconName: 'cloud', suggestedLimit: 1000 }
+    { id: 'netflix', name: 'Netflix', logoId: 'netflix', suggestedLimit: 1500 },
+    { id: 'spotify', name: 'Spotify', logoId: 'spotify', suggestedLimit: 700 },
+    { id: 'chatgpt', name: 'ChatGPT Plus', logoId: 'chatgpt', suggestedLimit: 2000 },
+    { id: 'notion', name: 'Notion', logoId: 'notion', suggestedLimit: 1000 },
+    { id: 'figma', name: 'Figma', logoId: 'figma', suggestedLimit: 1200 },
+    { id: 'github', name: 'GitHub', logoId: 'github', suggestedLimit: 400 },
+    { id: 'adobe', name: 'Adobe CC', logoId: 'adobe', suggestedLimit: 6500 },
+    { id: 'dropbox', name: 'Dropbox', logoId: 'dropbox', suggestedLimit: 1000 }
   ],
   en: [
-    { id: 'netflix', name: 'Netflix', iconName: 'tv', suggestedLimit: 1500 },
-    { id: 'spotify', name: 'Spotify', iconName: 'music', suggestedLimit: 700 },
-    { id: 'chatgpt', name: 'ChatGPT Plus', iconName: 'bot', suggestedLimit: 2000 },
-    { id: 'notion', name: 'Notion', iconName: 'file', suggestedLimit: 1000 },
-    { id: 'figma', name: 'Figma', iconName: 'pen', suggestedLimit: 1200 },
-    { id: 'github', name: 'GitHub', iconName: 'code', suggestedLimit: 400 },
-    { id: 'adobe', name: 'Adobe CC', iconName: 'image', suggestedLimit: 6500 },
-    { id: 'dropbox', name: 'Dropbox', iconName: 'cloud', suggestedLimit: 1000 }
+    { id: 'netflix', name: 'Netflix', logoId: 'netflix', suggestedLimit: 1500 },
+    { id: 'spotify', name: 'Spotify', logoId: 'spotify', suggestedLimit: 700 },
+    { id: 'chatgpt', name: 'ChatGPT Plus', logoId: 'chatgpt', suggestedLimit: 2000 },
+    { id: 'notion', name: 'Notion', logoId: 'notion', suggestedLimit: 1000 },
+    { id: 'figma', name: 'Figma', logoId: 'figma', suggestedLimit: 1200 },
+    { id: 'github', name: 'GitHub', logoId: 'github', suggestedLimit: 400 },
+    { id: 'adobe', name: 'Adobe CC', logoId: 'adobe', suggestedLimit: 6500 },
+    { id: 'dropbox', name: 'Dropbox', logoId: 'dropbox', suggestedLimit: 1000 }
   ]
 };
 

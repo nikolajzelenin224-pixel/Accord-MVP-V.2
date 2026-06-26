@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, Search } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getPopularServices } from '../../config/mockServices';
-import * as Icons from 'lucide-react';
+import { LOGO_LIBRARY } from '../../constants/logos';
 
 const ServiceSearch = ({ onSelectService, onBack }) => {
   const { t, language } = useLanguage();
@@ -12,21 +12,6 @@ const ServiceSearch = ({ onSelectService, onBack }) => {
   const filteredServices = services.filter(service =>
     service.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const getIcon = (iconName) => {
-    const iconMap = {
-      music: Icons.Music,
-      tv: Icons.Tv,
-      bot: Icons.Bot,
-      file: Icons.FileText,
-      pen: Icons.PenTool,
-      code: Icons.Code,
-      image: Icons.Image,
-      cloud: Icons.Cloud,
-    };
-    const IconComponent = iconMap[iconName] || Icons.Package;
-    return <IconComponent size={24} />;
-  };
 
   return (
     <div className="p-6">
@@ -69,10 +54,15 @@ const ServiceSearch = ({ onSelectService, onBack }) => {
             className="group p-4 rounded-xl bg-gray-50 hover:bg-zinc-900 hover:text-white transition-all duration-300 hover:scale-105 hover:shadow-lg"
           >
             <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-white group-hover:bg-white/20 flex items-center justify-center transition-colors">
-                <div className="text-zinc-900 group-hover:text-white transition-colors">
-                  {getIcon(service.iconName)}
-                </div>
+              <div className="w-12 h-12 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center p-2 transition-all group-hover:scale-110">
+                <img
+                  src={LOGO_LIBRARY[service.logoId]}
+                  alt={service.name}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/48?text=' + service.name.charAt(0);
+                  }}
+                />
               </div>
               <div className="text-sm font-semibold text-center">
                 {service.name}
@@ -85,7 +75,7 @@ const ServiceSearch = ({ onSelectService, onBack }) => {
       {filteredServices.length === 0 && (
         <div className="text-center py-12 text-gray-400">
           <Search size={48} className="mx-auto mb-4 opacity-50" />
-          <p>Сервис не найден</p>
+          <p>{t('addFlow.serviceNotFound')}</p>
         </div>
       )}
     </div>

@@ -4,48 +4,102 @@ import SubscriptionsPanel from './components/SubscriptionsPanel';
 import WidgetGrid from './components/WidgetGrid';
 import Header from './components/Header';
 import SubscriptionModal from './components/SubscriptionModal';
-import BNPLModal from './components/BNPLModal';
 import ProfileTab from './components/ProfileTab';
-import AddSubscriptionFlow from './components/AddSubscriptionFlow';
 import TopUpModal from './components/TopUpModal';
+import SubscriptionSearch from './components/SubscriptionSearch';
+import OnboardingSetup from './components/OnboardingSetup';
+import AuthScreen from './components/AuthScreen';
+import CardIssueScreen from './components/CardIssueScreen';
+import CardBindingScreen from './components/CardBindingScreen';
 import { Home, PieChart, User } from 'lucide-react';
 import { useLanguage } from './contexts/LanguageContext';
+import { supabase } from './lib/supabaseClient';
 
 const INITIAL_SUBS = [];
 
 
 const STORAGE_KEY = 'accord_subscriptions';
-const STORAGE_KEY_BALANCE = 'accord_balance';
-
-function loadFromStorage(key, defaultValue) {
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-}
 
 function App() {
-  const { t, formatCurrency } = useLanguage();
+  const { t, formatCurrency, language } = useLanguage();
+
+  // Очистка демо-данных подписок при каждой загрузке (сессию Supabase не трогаем)
+  useEffect(() => {
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
   const [activeTab, setActiveTab] = useState('home');
-  const [balance, setBalance] = useState(() => loadFromStorage(STORAGE_KEY_BALANCE, 0));
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
-  const [subscriptions, setSubscriptions] = useState(() => loadFromStorage(STORAGE_KEY, INITIAL_SUBS));
+  const [subscriptions, setSubscriptions] = useState(INITIAL_SUBS);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSub, setEditingSub] = useState(null);
-  const [isBNPLModalOpen, setIsBNPLModalOpen] = useState(false);
   const [isAddFlowOpen, setIsAddFlowOpen] = useState(false);
-  const [paymentDate, setPaymentDate] = useState(null); // День месяца для списания (null = не выбрана)
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [paymentDate, setPaymentDate] = useState(null);
+  const [paymentMode, setPaymentMode] = useState(null); // 'unified' | 'individual' | null (не настроено)
+  const [isOnboardingSetupOpen, setIsOnboardingSetupOpen] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [hasCards, setHasCards] = useState(null); // null = ещё не проверено
+  const [userCards, setUserCards] = useState([]);
+  const [bindingQueue, setBindingQueue] = useState([]); // id-шники подписок, ждущих привязки карты
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setAuthLoading(false);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!session) {
+      setHasCards(null);
+      return;
+    }
+    supabase
+      .from('cards')
+      .select('id, type, card_number, expiry, cvc, balance')
+      .eq('user_id', session.user.id)
+      .then(({ data }) => {
+        setUserCards(data || []);
+        setHasCards((data?.length ?? 0) > 0);
+      });
+  }, [session]);
+
+  // Баланс зачисляет Edge Function bank-webhook (по сигналу от MacroDroid на телефоне админа) —
+  // подписка на Realtime, чтобы карта на главном экране обновлялась без перезагрузки страницы.
+  useEffect(() => {
+    if (!session) return;
+    const channel = supabase
+      .channel('cards-balance')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'cards', filter: `user_id=eq.${session.user.id}` },
+        (payload) => {
+          setUserCards((prev) => prev.map((c) => (c.id === payload.new.id ? { ...c, ...payload.new } : c)));
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session]);
+
+  const balances = useMemo(() => ({
+    mir: Number(userCards.find((c) => c.type === 'mir')?.balance ?? 0),
+    mc: Number(userCards.find((c) => c.type === 'mc')?.balance ?? 0),
+  }), [userCards]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(subscriptions));
   }, [subscriptions]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_BALANCE, JSON.stringify(balance));
-  }, [balance]);
 
   const NAV_ITEMS = useMemo(() => [
     { id: 'home', icon: Home, label: t('nav.home') },
@@ -83,9 +137,23 @@ function App() {
       .reduce((sum, sub) => sum + sub.price, 0);
   }, [subscriptions]);
 
+  // Сумма к пополнению считается раздельно: МИР покрывает только подписки внутри страны,
+  // Mastercard — только зарубежные. Иначе пользователь видит одну и ту же рекомендованную
+  // сумму на обеих картах, хотя по факту с каждой карты списывается своя часть подписок.
+  const commitmentsByCard = useMemo(() => {
+    const sums = { mir: 0, mc: 0 };
+    subscriptions
+      .filter(sub => sub.active)
+      .forEach(sub => {
+        const key = sub.card_type === 'mc' ? 'mc' : 'mir';
+        sums[key] += sub.price;
+      });
+    return sums;
+  }, [subscriptions]);
+
   const shortfall = useMemo(() => {
-    return Math.max(0, totalCommitments - balance);
-  }, [totalCommitments, balance]);
+    return Math.max(0, totalCommitments - (balances.mir + balances.mc));
+  }, [totalCommitments, balances]);
 
   const toggleSubscription = (id) => {
     setSubscriptions(prevSubs => {
@@ -99,12 +167,47 @@ function App() {
   };
 
   const handleAddClick = () => {
-    setIsAddFlowOpen(true);
+    setIsSearchModalOpen(true);
   };
 
-  const handleAddClickOld = () => {
-    setEditingSub(null);
-    setModalOpen(true);
+  const handleConfirmSelection = (selectedServices) => {
+    const isFirstSubscription = subscriptions.length === 0;
+    setSubscriptions(prev => [
+      ...prev,
+      ...selectedServices.map(service => ({
+        id: service.id,
+        registry_service_id: service.isCustom ? null : service.id,
+        name: service.name,
+        price: service.default_price,
+        logo_url: service.logo_url,
+        card_type: service.card_type === 'mc' ? 'mc' : 'mir',
+        active: true,
+        binding_status: 'pending_user_confirm',
+      })),
+    ]);
+    setIsSearchModalOpen(false);
+    setBindingQueue(prev => [...prev, ...selectedServices.map(s => s.id)]);
+
+    if (isFirstSubscription && !hasCompletedOnboarding) {
+      setIsOnboardingSetupOpen(true);
+    }
+  };
+
+  const bindingSub = subscriptions.find(s => s.id === bindingQueue[0]) ?? null;
+
+  const handleOpenBinding = (sub) => {
+    setBindingQueue([sub.id]);
+  };
+
+  const handleConfirmBinding = () => {
+    setSubscriptions(prev =>
+      prev.map(s => (s.id === bindingQueue[0] ? { ...s, binding_status: 'user_confirmed' } : s))
+    );
+    setBindingQueue(prev => prev.slice(1));
+  };
+
+  const handleCloseBinding = () => {
+    setBindingQueue([]);
   };
 
   const handleEditClick = (sub) => {
@@ -126,31 +229,81 @@ function App() {
     setSubscriptions(prev => prev.filter(sub => sub.id !== id));
   };
 
-  const handlePayLater = () => {
-    setIsBNPLModalOpen(true);
-  };
-
-  const handleBNPLConfirm = () => {
-    setBalance(prev => prev + shortfall);
-  };
-
   const handleFlowComplete = (newSubscriptions) => {
+    const isFirstSubscription = subscriptions.length === 0;
     setSubscriptions(prev => [...prev, ...newSubscriptions]);
     setIsAddFlowOpen(false);
+    
+    // Если это первая подписка и onboarding не завершен, открыть setup
+    if (isFirstSubscription && !hasCompletedOnboarding) {
+      setIsOnboardingSetupOpen(true);
+    }
+  };
+
+  const handleOnboardingComplete = ({ mode, paymentDate: day, autoPayment }) => {
+    setPaymentMode(mode);
+    setPaymentDate(mode === 'unified' ? day : null);
+    setHasCompletedOnboarding(true);
+    localStorage.setItem('accord_onboarding_completed', JSON.stringify(true));
+    setIsOnboardingSetupOpen(false);
+
+    // Опционально: если выбрано автопополнение, можно сохранить эту настройку
+    if (autoPayment) {
+      localStorage.setItem('accord_auto_payment', JSON.stringify(true));
+    }
   };
 
   const handleTopUp = () => {
     setIsTopUpModalOpen(true);
   };
 
-  const handleTopUpComplete = (amount) => {
-    setBalance(prev => prev + amount);
-    setIsTopUpModalOpen(false);
-  };
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
-  const handleAutoPaymentDateSet = (day) => {
-    setPaymentDate(day);
-  };
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gray-50 font-sans text-gray-900 antialiased">
+        <div className="max-w-md mx-auto">
+          <AuthScreen onAuthenticated={setSession} />
+        </div>
+      </div>
+    );
+  }
+
+  if (hasCards === null) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!hasCards) {
+    return (
+      <div className="min-h-screen bg-gray-50 font-sans text-gray-900 antialiased">
+        <div className="max-w-md mx-auto">
+          <CardIssueScreen
+            userId={session.user.id}
+            onComplete={() => {
+              supabase
+                .from('cards')
+                .select('id, type, card_number, expiry, cvc')
+                .eq('user_id', session.user.id)
+                .then(({ data }) => {
+                  setUserCards(data || []);
+                  setHasCards((data?.length ?? 0) > 0);
+                });
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 font-sans text-gray-900 antialiased">
@@ -159,126 +312,75 @@ function App() {
         
         {activeTab === 'home' && (
           <>
-            <SmartCard balance={balance} />
+            {subscriptions.length === 0 ? (
+              <SubscriptionSearch onConfirmSelection={handleConfirmSelection} />
+            ) : (
+              <>
+                <SmartCard balances={balances} cards={userCards} />
 
-            {/* Top Up Button - compact and styled to match card */}
-            <div className="px-4 pb-4 flex justify-center">
-              <button
-                onClick={handleTopUp}
-                className="px-8 py-2.5 bg-gradient-to-br from-zinc-900 to-zinc-800 text-white rounded-xl font-medium hover:from-zinc-800 hover:to-zinc-700 transition-all shadow-md hover:shadow-lg text-sm"
-              >
-                Пополнить
-              </button>
-            </div>
-
-            {/* Payment Date Selector - clickable */}
-            <div className="px-4 pb-4">
-              <button
-                onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                className="w-full p-4 bg-gradient-to-br from-gray-50 to-gray-100 hover:from-white hover:to-gray-50 border border-gray-200 rounded-2xl transition-all hover:shadow-md"
-              >
-                {paymentDate === null ? (
-                  <div className="text-sm text-gray-600 text-center">
-                    Выберите дату оплаты
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                      К списанию {paymentDate} {(() => {
-                        const today = new Date();
-                        const currentDay = today.getDate();
-                        const targetMonth = paymentDate < currentDay ? today.getMonth() + 1 : today.getMonth();
-                        return new Date(today.getFullYear(), targetMonth).toLocaleString('ru', { month: 'long' });
-                      })()}:
-                    </span>
-                    <span className="font-semibold text-gray-900">{formatCurrency(totalCommitments)}</span>
-                  </div>
-                )}
-              </button>
-              
-              {/* Dynamic Date Picker Dropdown */}
-              {isDatePickerOpen && (
-                <div className="mt-2 p-4 bg-white border border-gray-200 rounded-2xl shadow-lg">
-                  <p className="text-sm font-medium text-gray-700 mb-3">Выберите день списания</p>
-                  {(() => {
-                    const today = new Date();
-                    const currentDay = today.getDate();
-                    const currentMonth = today.getMonth();
-                    const currentYear = today.getFullYear();
-                    
-                    // Дни текущего месяца (от сегодня до конца месяца)
-                    const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-                    const currentMonthDays = [];
-                    for (let day = currentDay; day <= daysInCurrentMonth; day++) {
-                      currentMonthDays.push({
-                        day,
-                        month: currentMonth,
-                        monthName: new Date(currentYear, currentMonth).toLocaleString('ru', { month: 'short' })
-                      });
-                    }
-                    
-                    // Дни следующего месяца (с 1 до текущего дня - 1)
-                    const nextMonthDays = [];
-                    for (let day = 1; day < currentDay; day++) {
-                      nextMonthDays.push({
-                        day,
-                        month: currentMonth + 1,
-                        monthName: new Date(currentYear, currentMonth + 1).toLocaleString('ru', { month: 'short' })
-                      });
-                    }
-                    
-                    const allDays = [...currentMonthDays, ...nextMonthDays];
-                    
-                    return (
-                      <div className="grid grid-cols-7 gap-2 max-h-64 overflow-y-auto">
-                        {allDays.map(({ day, month, monthName }) => (
-                          <button
-                            key={`${month}-${day}`}
-                            onClick={() => {
-                              setPaymentDate(day);
-                              setIsDatePickerOpen(false);
-                            }}
-                            className={`p-2 rounded-lg text-xs font-medium transition-all ${
-                              paymentDate === day
-                                ? 'bg-gray-900 text-white shadow-md'
-                                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                            }`}
-                            title={`${day} ${monthName}`}
-                          >
-                            <div>{day}</div>
-                            <div className="text-[10px] opacity-60">{monthName}</div>
-                          </button>
-                        ))}
+                {/* Compact Payment Info & Top Up Panel */}
+                <div className="px-4 pb-4">
+                  <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                    {/* Payment Date Info */}
+                    {paymentMode === 'unified' && paymentDate !== null && (
+                      <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <span className="text-sm font-bold text-blue-600">{paymentDate}</span>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500">{t('card.toCharge')}</div>
+                            <div className="text-sm font-semibold text-gray-900">
+                              {(() => {
+                                const today = new Date();
+                                const currentDay = today.getDate();
+                                const targetMonth = paymentDate < currentDay ? today.getMonth() + 1 : today.getMonth();
+                                return new Date(today.getFullYear(), targetMonth).toLocaleString(language === 'ru' ? 'ru' : 'en', { month: 'long' });
+                              })()} • {formatCurrency(totalCommitments)}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setIsOnboardingSetupOpen(true)}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          {t('card.selectPaymentDate')}
+                        </button>
                       </div>
-                    );
-                  })()}
-                </div>
-              )}
-            </div>
+                    )}
 
-            {shortfall > 0 && (
-              <div className="mx-4 mb-6 p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-zinc-600">
-                    {t('shortfall.notEnough')}
-                  </p>
-                  <button
-                    onClick={handlePayLater}
-                    className="px-4 py-2 bg-zinc-900 text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors"
-                  >
-                    {t('shortfall.payLater')} {formatCurrency(shortfall)}
-                  </button>
+                    {paymentMode === 'individual' && (
+                      <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
+                        <p className="text-xs text-gray-500">{t('onboarding.individualTitle')}</p>
+                        <button
+                          onClick={() => setIsOnboardingSetupOpen(true)}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          {t('card.selectPaymentDate')}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Top Up Button */}
+                    <button
+                      onClick={handleTopUp}
+                      className="w-full py-3 bg-gradient-to-br from-zinc-900 to-zinc-800 text-white rounded-xl font-semibold hover:from-zinc-800 hover:to-zinc-700 transition-all shadow-md hover:shadow-lg"
+                    >
+                      {t('card.topUp')}
+                    </button>
+                  </div>
                 </div>
-              </div>
+
+                <SubscriptionsPanel
+                  subscriptions={subscriptions}
+                  onToggle={toggleSubscription}
+                  onEdit={handleEditClick}
+                  onAdd={handleAddClick}
+                  onBind={handleOpenBinding}
+                />
+                {/* WidgetGrid скрыт */}
+              </>
             )}
-
-            <SubscriptionsPanel
-              subscriptions={subscriptions}
-              onToggle={toggleSubscription}
-              onEdit={handleEditClick}
-              onAdd={handleAddClick}
-            />
-            {/* WidgetGrid скрыт */}
           </>
         )}
 
@@ -330,27 +432,41 @@ function App() {
         subscription={editingSub}
       />
 
-      <BNPLModal
-        isOpen={isBNPLModalOpen}
-        onClose={() => setIsBNPLModalOpen(false)}
-        shortfall={shortfall}
-        onConfirm={handleBNPLConfirm}
-        paymentDate={paymentDate}
-      />
-
-      <AddSubscriptionFlow
-        isOpen={isAddFlowOpen}
-        onClose={() => setIsAddFlowOpen(false)}
-        onComplete={handleFlowComplete}
-      />
+      {isSearchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsSearchModalOpen(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <SubscriptionSearch onConfirmSelection={handleConfirmSelection} />
+          </div>
+        </div>
+      )}
 
       <TopUpModal
         isOpen={isTopUpModalOpen}
         onClose={() => setIsTopUpModalOpen(false)}
-        onTopUpComplete={handleTopUpComplete}
-        recommendedAmount={totalCommitments}
-        onAutoPaymentDateSet={handleAutoPaymentDateSet}
+        userId={session.user.id}
+        recommendedAmounts={commitmentsByCard}
+        cards={userCards}
       />
+
+      <OnboardingSetup
+        isOpen={isOnboardingSetupOpen}
+        onClose={() => setIsOnboardingSetupOpen(false)}
+        onComplete={handleOnboardingComplete}
+        totalAmount={totalCommitments}
+        initialMode={paymentMode ?? 'unified'}
+        initialDay={paymentDate ?? 15}
+      />
+
+      {bindingSub && (
+        <CardBindingScreen
+          subscription={bindingSub}
+          cards={userCards}
+          hasMore={bindingQueue.length > 1}
+          onConfirm={handleConfirmBinding}
+          onClose={handleCloseBinding}
+        />
+      )}
     </div>
   );
 }

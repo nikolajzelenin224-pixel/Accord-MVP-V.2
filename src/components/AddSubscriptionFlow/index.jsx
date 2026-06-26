@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { generateMockSubscriptions } from '../../config/mockServices';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import MethodSelection from './MethodSelection';
 import BankSelection from './BankSelection';
 import BankSync from './BankSync';
@@ -26,6 +27,9 @@ const AddSubscriptionFlow = ({ isOpen, onClose, onComplete }) => {
   const [selectedBank, setSelectedBank] = useState(null);
   const [foundSubscriptions, setFoundSubscriptions] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
+
+  // Lock body scroll when modal is open
+  useBodyScrollLock(isOpen);
 
   // Reset state when modal closes
   const handleClose = () => {

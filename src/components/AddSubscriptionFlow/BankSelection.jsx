@@ -9,7 +9,7 @@ const BankSelection = ({ onSelectBank, onBack }) => {
   const banks = getBanksByLanguage(language);
 
   return (
-    <div className="p-6">
+    <div className="p-6 min-h-[500px] flex flex-col">
       <div className="flex items-center mb-8">
         <button
           onClick={onBack}

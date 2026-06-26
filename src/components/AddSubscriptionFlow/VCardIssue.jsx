@@ -24,7 +24,7 @@ const VCardIssue = ({ service, onConfirm, onBack }) => {
       id: service.id + '_' + Date.now(),
       name: service.name,
       price: service.suggestedLimit,
-      iconName: service.iconName,
+      logoId: service.logoId,
       active: true,
       cardNumber: cardNumber,
       expiryDate: expiryDate,
@@ -49,7 +49,7 @@ const VCardIssue = ({ service, onConfirm, onBack }) => {
 
       {/* Service Info */}
       <div className="mb-6 p-4 bg-gray-50 rounded-xl">
-        <div className="text-sm text-gray-500 mb-1">Сервис</div>
+        <div className="text-sm text-gray-500 mb-1">{t('addFlow.service')}</div>
         <div className="text-lg font-semibold text-gray-900">{service.name}</div>
         <div className="text-sm text-gray-500 mt-2">
           {t('addFlow.monthlyLimit')}: {formatCurrency(service.suggestedLimit)}
@@ -72,7 +72,7 @@ const VCardIssue = ({ service, onConfirm, onBack }) => {
 
           {/* Card Number */}
           <div>
-            <div className="text-xs opacity-60 mb-2">Card Number</div>
+            <div className="text-xs opacity-60 mb-2">{t('addFlow.cardNumber')}</div>
             <div className="flex items-center justify-between mb-4">
               <div className="text-lg font-mono tracking-wider">
                 {cardNumber}
@@ -92,7 +92,7 @@ const VCardIssue = ({ service, onConfirm, onBack }) => {
             {/* Expiry and CVC */}
             <div className="flex gap-6">
               <div>
-                <div className="text-xs opacity-60 mb-1">Valid Until</div>
+                <div className="text-xs opacity-60 mb-1">{t('addFlow.validThru')}</div>
                 <div className="text-sm font-mono">{expiryDate}</div>
               </div>
               <div>
@@ -132,8 +132,8 @@ const VCardIssue = ({ service, onConfirm, onBack }) => {
       {/* Info */}
       <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
         <p className="text-sm text-blue-900">
-          Эта карта привязана к сервису <strong>{service.name}</strong>. 
-          Лимит автоматически обновляется каждый месяц.
+          {t('addFlow.cardLinkedTo')} <strong>{service.name}</strong>.
+          {t('addFlow.monthlyLimitWillBe')} {formatCurrency(service.suggestedLimit)}.
         </p>
       </div>
 

@@ -6,10 +6,13 @@ const MethodSelection = ({ onSelectMethod }) => {
   const { t } = useLanguage();
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+    <div className="p-6 min-h-[500px] flex flex-col justify-center">
+      <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
         {t('addFlow.methodTitle')}
       </h2>
+      <p className="text-gray-600 text-center mb-8 text-sm">
+        {t('addFlow.methodSubtitle')}
+      </p>
       
       <div className="grid grid-cols-1 gap-4">
         {/* Auto Sync Option */}

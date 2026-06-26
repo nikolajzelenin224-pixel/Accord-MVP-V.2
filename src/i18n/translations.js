@@ -15,6 +15,10 @@ export const translations = {
     card: {
       availableLimit: 'Доступный лимит',
       thisMonth: 'в этом месяце',
+      topUp: 'Пополнить',
+      toCharge: 'К списанию',
+      selectPaymentDate: 'Выберите дату оплаты',
+      selectChargeDay: 'Выберите день списания',
       cvcWarning: 'Это CVC-код. Никому его не сообщайте.',
       validUntil: 'До',
       anyName: 'При оплате можно указать любое имя',
@@ -48,8 +52,15 @@ export const translations = {
     },
     // Shortfall
     shortfall: {
-      notEnough: 'Не хватает средств для списания',
-      payLater: 'Оплатить позже',
+      choosePayment: 'Выберите способ оплаты',
+      missing: 'Не хватает',
+      until: 'до',
+      deferPayment: 'Оформить отсрочку',
+      recommended: 'Рекомендуем',
+      startPayingFrom: 'Начните платить с удобной даты',
+      commission: 'Комиссия 4%',
+      topUpNow: 'Пополнить сейчас',
+      instantCredit: 'Моментальное зачисление',
     },
     // Subscription Modal
     modal: {
@@ -105,6 +116,7 @@ export const translations = {
     addFlow: {
       // Method selection
       methodTitle: 'Как добавить подписку?',
+      methodSubtitle: 'Выберите удобный способ добавления подписок',
       autoSync: 'Синхронизировать данные банка',
       autoSyncDesc: 'Автоматический поиск подписок',
       manualCard: 'Выпустить карту под сервис',
@@ -130,13 +142,67 @@ export const translations = {
       // Manual flow
       searchService: 'Поиск сервиса',
       popularServices: 'Популярные сервисы',
+      serviceNotFound: 'Сервис не найден',
       cardIssued: 'Карта выпущена',
+      service: 'Сервис',
       monthlyLimit: 'Месячный лимит',
+      cardNumber: 'Номер карты',
+      validThru: 'Действует до',
+      cardLinkedTo: 'Эта карта привязана к сервису',
+      monthlyLimitWillBe: 'Ежемесячный лимит составит',
       addToSubscriptions: 'Добавить в подписки',
       
       // Common
       back: 'Назад',
       close: 'Закрыть',
+    },
+    // Empty State
+    emptyState: {
+      title: 'Управляйте подписками как профи',
+      description: 'Экономьте время и деньги. Более 1000 пользователей уже оптимизировали свои подписки',
+      addFirstSubscription: '+ Добавить подписки',
+      feature1Title: 'Экономия 2+ часа в месяц',
+      feature1Desc: 'Автоматизация управления подписками',
+      feature2Title: 'Средняя экономия $47/месяц',
+      feature2Desc: 'Оптимизация тарифов и контроль расходов',
+      feature3Title: 'Виртуальные карты',
+      feature3Desc: 'Отдельная карта для каждого сервиса',
+    },
+    // Onboarding Setup
+    onboarding: {
+      title: 'Подписки добавлены!',
+      subtitle: 'Настройте оплату',
+      chooseApproach: 'Как списывать оплату за подписки?',
+      unifiedTitle: 'Единая дата',
+      unifiedDesc: 'Одна сумма раз в месяц на карту Accord',
+      individualTitle: 'Свои даты',
+      individualDesc: 'Каждая подписка платится как раньше',
+      individualNote: 'Объединить подписки в одну дату можно позже в Профиле.',
+      approach: 'Подход',
+      next: 'Далее',
+      selectChargeDay: 'Выберите день списания',
+      chargeDayHint: 'Средства будут списываться в этот день каждый месяц',
+      recommended: 'Рекомендуется',
+      summary: 'Итого',
+      chargeDay: 'День списания',
+      dayOfMonth: 'числа',
+      monthlyAmount: 'Сумма в месяц',
+      complete: 'Завершить настройку',
+    },
+    // Top Up Modal
+    topUp: {
+      amountTitle: 'Пополнение баланса',
+      transferInstructions: 'Переведите средства с любой своей карты на карту Accord',
+      yourAccordCard: 'Ваша виртуальная карта Accord',
+      cardCopied: 'Номер скопирован',
+      enterAmount: 'Введите сумму перевода',
+      quickSelect: 'Быстрый выбор',
+      recommendedAmount: 'Рекомендуемая сумма',
+      forActiveSubscriptions: 'Для покрытия активных подписок',
+      topUpButton: 'Я перевёл',
+      processing: 'Проверяем перевод...',
+      success: 'Успешно!',
+      fundsAdded: 'Средства зачислены на баланс',
     },
   },
   en: {
@@ -155,6 +221,10 @@ export const translations = {
     card: {
       availableLimit: 'Available Limit',
       thisMonth: 'this month',
+      topUp: 'Top Up',
+      toCharge: 'To be charged',
+      selectPaymentDate: 'Select payment date',
+      selectChargeDay: 'Select charge day',
       cvcWarning: 'This is CVC code. Do not share it with anyone.',
       validUntil: 'Valid until',
       anyName: 'You can use any name for payment',
@@ -188,8 +258,15 @@ export const translations = {
     },
     // Shortfall
     shortfall: {
-      notEnough: 'Insufficient funds for charge',
-      payLater: 'Pay later',
+      choosePayment: 'Choose payment method',
+      missing: 'Missing',
+      until: 'until',
+      deferPayment: 'Defer payment',
+      recommended: 'Recommended',
+      startPayingFrom: 'Start paying from a convenient date',
+      commission: 'Commission 4%',
+      topUpNow: 'Top up now',
+      instantCredit: 'Instant credit',
     },
     // Subscription Modal
     modal: {
@@ -237,6 +314,39 @@ export const translations = {
       security: 'Security',
       about: 'About',
     },
+    // Empty State
+    emptyState: {
+      title: 'Manage subscriptions like a pro',
+      description: 'Save time and money. Over 1000 users have already optimized their subscriptions',
+      addFirstSubscription: '+ Add subscriptions',
+      feature1Title: 'Save 2+ hours per month',
+      feature1Desc: 'Automated subscription management',
+      feature2Title: 'Average savings $47/month',
+      feature2Desc: 'Tariff optimization and expense control',
+      feature3Title: 'Virtual cards',
+      feature3Desc: 'Separate card for each service',
+    },
+    // Onboarding Setup
+    onboarding: {
+      title: 'Subscriptions added!',
+      subtitle: 'Set up payment',
+      selectChargeDay: 'Select charge day',
+      chargeDayHint: 'Funds will be charged on this day each month',
+      paymentMethod: 'Payment method',
+      autoPayment: 'Auto top-up',
+      recommended: 'Recommended',
+      autoPaymentDesc: 'Balance is topped up automatically before charge',
+      manualPayment: 'Manual top-up',
+      manualPaymentDesc: 'You top up balance yourself',
+      summary: 'Summary',
+      chargeDay: 'Charge day',
+      dayOfMonth: 'of month',
+      monthlyAmount: 'Monthly amount',
+      method: 'Method',
+      auto: 'Auto',
+      manual: 'Manual',
+      complete: 'Complete setup',
+    },
     // Auto-detect
     autoDetect: {
       detected: 'Transaction detected: Yandex Services',
@@ -245,6 +355,7 @@ export const translations = {
     addFlow: {
       // Method selection
       methodTitle: 'How to add subscription?',
+      methodSubtitle: 'Choose a convenient way to add subscriptions',
       autoSync: 'Sync bank data',
       autoSyncDesc: 'Automatic subscription search',
       manualCard: 'Issue card for service',
@@ -270,13 +381,37 @@ export const translations = {
       // Manual flow
       searchService: 'Search service',
       popularServices: 'Popular services',
+      serviceNotFound: 'Service not found',
       cardIssued: 'Card issued',
+      service: 'Service',
       monthlyLimit: 'Monthly limit',
+      cardNumber: 'Card Number',
+      validThru: 'Valid Thru',
+      cardLinkedTo: 'This card is linked to service',
+      monthlyLimitWillBe: 'Monthly limit will be',
       addToSubscriptions: 'Add to subscriptions',
       
       // Common
       back: 'Back',
       close: 'Close',
+    },
+    // Top Up Modal
+    topUp: {
+      selectBank: 'Select bank for top-up',
+      amountTitle: 'Top-up amount',
+      topUpFrom: 'Top-up from',
+      enterAmount: 'Enter amount',
+      quickSelect: 'Quick select',
+      recommendedAmount: 'Recommended amount',
+      forActiveSubscriptions: 'To cover active subscriptions',
+      autoPayment: 'Set up auto top-up (optional)',
+      autoPaymentHint: 'Funds will be automatically topped up on the selected date each month',
+      topUpButton: 'Top up',
+      processing: 'Processing payment...',
+      connectingTo: 'Connecting to',
+      success: 'Success!',
+      fundsAdded: 'Funds added to card',
+      autoPaymentSet: 'Auto top-up set for',
     },
   },
 };

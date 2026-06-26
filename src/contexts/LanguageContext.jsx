@@ -8,12 +8,9 @@ const USD_TO_RUB_RATE = 95; // Approximate exchange rate
 
 export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored || 'ru';
-    } catch {
-      return 'ru';
-    }
+    // Язык залочен на 'ru' для MVP-питча. EN-версия архивирована, не удалена —
+    // см. plans/mvp-pitch-roadmap.md, раздел "Зафиксированные решения".
+    return 'ru';
   });
 
   useEffect(() => {
@@ -32,7 +29,8 @@ export const LanguageProvider = ({ children }) => {
   };
 
   const changeLanguage = (lang) => {
-    if (lang === 'ru' || lang === 'en') {
+    // EN временно архивирован для MVP-питча — переключение недоступно через UI.
+    if (lang === 'ru') {
       setLanguage(lang);
     }
   };
